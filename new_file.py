@@ -11,8 +11,6 @@ clock.tick(fps)
 
 
 class EnemyCommon:  # он же враг нулевого типа
-    global width, height
-
     def __init__(self, hp=5, speed=0.8, bullet=0.6, entfernung=2.0, x=200, y=20):
         self.x = x
         self.y = y
@@ -99,13 +97,12 @@ class GeometryBulletHell:
         self.gaming = False
         self.count_for_fertig_lvl = 0
         self.count_for_menu = 0
-        '''self.player = тип_игрока'''
+        self.player = Player0
 
     def menu(self, event_key):
         '''главное меню'''
         self.ramka()
         font = pygame.font.Font(fontt, 13)
-        # ====================================================================^
         text = font.render('sum of record score: ' + str(sum(record_score)), False, (140, 140, 140))
         screen.blit(text, (k, m))
         self.choosen_lvl = abs(self.choosen_lvl) % 8
@@ -121,16 +118,18 @@ class GeometryBulletHell:
             self.player_type = (self.player_type + 1) % 4
 
         elif event_key == pygame.K_z:  # ================================ КНОПКА СУДЬБЫ =========================
+            x, y = 270, 550
             if self.player_type == 0:
-                self.player = Player0()
+                self.player = Player0(x=x, y=y)
             elif self.player_type == 1:
-                self.player = Player1()
+                self.player = Player1(x=x, y=y)
             elif self.player_type == 2:
-                self.player = Player2()
+                self.player = Player2(x=x, y=y)
             elif self.player_type == 3:
-                self.player = Player3()
+                self.player = Player3(x=x, y=y)
             self.gaming = True
             screen.fill((0, 0, 0))
+            self.player.render()
             self.extended_ramka()
             return
 
@@ -174,7 +173,7 @@ class GeometryBulletHell:
         pygame.draw.rect(screen, (0, 0, 0), (0, 0, width, 20))
         pygame.draw.rect(screen, (0, 0, 0), (0, 0, 20, height))
         pygame.draw.rect(screen, (0, 0, 0), (0, 580, width, height))
-        pygame.draw.rect(screen, (0, 0, 0), (520, 0, width, 20))
+        pygame.draw.rect(screen, (0, 0, 0), (520, 0, width, height))
         pygame.draw.rect(screen, (255, 255, 255), (20, 20, 500, 560), 2)
 
     def lvl0(self):
@@ -202,7 +201,6 @@ class GeometryBulletHell:
         pass
 
 
-# ===================================================таймер====================================
 class Timer:
     def __init__(self):
         self.time = pygame.time.get_ticks()
@@ -213,6 +211,8 @@ class Timer:
     def stop(self):
         serv = pygame.time.get_ticks() - self.time
         return serv
+
+# ===================================================ПРОГРАММА===============================================
 
 
 try:
@@ -280,6 +280,22 @@ if __name__ == '__main__':
                 game.menu(event.key)
             elif event.type == pygame.KEYUP:
                 flag_key = False
+
+            if game.gaming:
+                if event.type == pygame.KEYDOWN:
+                    if flag_key:
+                        if event.key == pygame.K_UP:
+                            game.player.ymove(-step)
+                            print('ok')
+                        elif event.key == pygame.K_DOWN:
+                            game.player.ymove(step)
+                        elif event.key == pygame.K_RIGHT:
+                            game.player.xmove(step)
+                        elif event.key == pygame.K_LEFT:
+                            game.player.xmove(-step)
+                        screen.fill((0, 0, 0))
+                        game.player.render()
+                        game.extended_ramka()
 
         pygame.display.flip()
     pygame.quit()
