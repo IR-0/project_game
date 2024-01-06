@@ -1,5 +1,5 @@
 import pygame
-from serv import listt
+# from serv import listt
 
 
 pygame.init()
@@ -122,7 +122,7 @@ class GeometryBulletHell:
             if self.player_type == 0:
                 self.player = Player0(x=x, y=y)
             elif self.player_type == 1:
-                self.player = Player1(x=x, y=y)
+                self.player = Player1(x=x, y=y)  # странно, раньше не подсвечивало
             elif self.player_type == 2:
                 self.player = Player2(x=x, y=y)
             elif self.player_type == 3:
