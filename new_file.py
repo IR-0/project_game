@@ -5,10 +5,91 @@ from serv import listt
 pygame.init()
 size = width, height = 800, 600
 screen = pygame.display.set_mode(size)
+fps = 40
+clock = pygame.time.Clock()
+clock.tick(fps)
 
 
 class EnemyCommon:  # он же враг нулевого типа
-    pass
+    global width, height
+
+    def __init__(self, hp=5, speed=0.8, bullet=0.6, entfernung=2.0, x=200, y=20):
+        self.x = x
+        self.y = y
+        self.hp = hp
+        self.coef_speed = speed
+        self.coef_bullet = bullet
+        self.entfernung = entfernung
+
+    def render(self):
+        pygame.draw.circle(screen, (255, 255, 255), (self.x, self.y), 5)
+        pass
+
+    def shot(self):
+        pass
+
+    def xmove(self, spec, acceleration=1):
+        self.x = self.x + int(spec * self.coef_speed * acceleration)
+
+    def ymove(self, spec, acceleration=1):
+        self.y = self.y + int(spec * self.coef_speed * acceleration)
+
+    def death(self):
+        pass
+
+
+class EnemyType1(EnemyCommon):
+    def __init__(self):
+        super().__init__(20, 1, 1, 1)
+
+
+class EnemyType3(EnemyCommon):
+    def __init__(self):
+        super().__init__(50, 1, 1.5, 0.9)
+
+
+class EnemyType4(EnemyCommon):
+    def __init__(self, hp=50, speed=2, bullet=1, entfernung=0.8):
+        super().__init__(hp, speed, bullet, entfernung)
+        self.anticipation = 40
+
+    def ruck(self, coef=1):  # уклон
+        pass
+
+
+class EnemyType7(EnemyType4):
+    def __init__(self):
+        super().__init__(100, 2, 2, 0.7)
+        self.anticipation = 20
+
+    def ruck(self):
+        super().ruck(coef=2)
+
+
+class Player0(EnemyCommon):  # h. Общий класс для всех играбельных персонажей
+    def __init__(self, hp=1, speed=1, bullet=1, ent=1.0, x=400, y=400):
+        super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
+
+    def graze(self):
+        pass
+
+    def bomb(self):
+        pass
+
+
+class Player1(Player0):  # d
+    def __init__(self):
+        super().__init__(speed=1.3, bullet=0.9, ent=0.8)
+
+
+class Player2(Player0):  # s
+    def __init__(self):
+        super().__init__(speed=0.9, bullet=1.3, ent=1.3)
+
+
+class Player3(Player0):  # j
+    def __init__(self):
+        super().__init__(speed=0.8, bullet=1.1, ent=1.4)
 
 
 class GeometryBulletHell:
@@ -41,7 +122,13 @@ class GeometryBulletHell:
 
         elif event_key == pygame.K_z:  # ================================ КНОПКА СУДЬБЫ =========================
             if self.player_type == 0:
-                pass
+                self.player = Player0()
+            elif self.player_type == 1:
+                self.player = Player1()
+            elif self.player_type == 2:
+                self.player = Player2()
+            elif self.player_type == 3:
+                self.player = Player3()
             self.gaming = True
             screen.fill((0, 0, 0))
             self.extended_ramka()
@@ -152,11 +239,6 @@ if __name__ == '__main__':
 
     game = GeometryBulletHell()
 
-    fps = 40
-
-    clock = pygame.time.Clock()
-    clock.tick(fps)
-
     running = True
     fl = True
     flag_key = False
@@ -165,7 +247,7 @@ if __name__ == '__main__':
     bullets = []
     feinde = []
     fontt = 'C:/Windows/Fonts/bahnschrift.ttf'
-    # непонятные переменнные
+    # TOD непонятные переменнные (потом переназову)
     n = 40
     k = 540
     m = 20
