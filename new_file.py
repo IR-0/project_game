@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 # from serv import listt
 
@@ -66,6 +68,7 @@ class EnemyType7(EnemyType4):
 
 class Player0(EnemyCommon):  # h. Общий класс для всех играбельных персонажей
     def __init__(self, hp=1, speed=1, bullet=1, ent=1.0, x=400, y=400):
+        print(0)
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
 
     def graze(self):
@@ -76,18 +79,20 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
 
 
 class Player1(Player0):  # d
-    def __init__(self):
-        super().__init__(speed=1.3, bullet=0.9, ent=0.8)
+    def __init__(self, x, y):
+        print(1)
+        super().__init__(speed=1.3, bullet=0.9, ent=0.8, x=x, y=y)
 
 
 class Player2(Player0):  # s
-    def __init__(self):
-        super().__init__(speed=0.9, bullet=1.3, ent=1.3)
+    def __init__(self, x, y):
+        print(2)
+        super().__init__(speed=0.9, bullet=1.3, ent=1.3, x=x, y=y)
 
 
 class Player3(Player0):  # j
-    def __init__(self):
-        super().__init__(speed=0.8, bullet=1.1, ent=1.4)
+    def __init__(self, x, y):
+        super().__init__(speed=0.8, bullet=1.1, ent=1.4, x=x, y=y)
 
 
 class GeometryBulletHell:
@@ -170,11 +175,11 @@ class GeometryBulletHell:
     def extended_ramka(self):
         '''идея в том, что до вызова функции прорисовывается поле и пули на нем, а после вызовва
         поле ограничивается рамкой, в итоге пули существуют и за пределами рамки, но закрываются ею'''
-        pygame.draw.rect(screen, (0, 0, 0), (0, 0, width, 20))
-        pygame.draw.rect(screen, (0, 0, 0), (0, 0, 20, height))
-        pygame.draw.rect(screen, (0, 0, 0), (0, 580, width, height))
-        pygame.draw.rect(screen, (0, 0, 0), (520, 0, width, height))
-        pygame.draw.rect(screen, (255, 255, 255), (20, 20, 500, 560), 2)
+        pygame.draw.rect(screen, (0, 0, 0), (0, 0, width, up_border))
+        pygame.draw.rect(screen, (0, 0, 0), (0, 0, l_border, height))
+        pygame.draw.rect(screen, (0, 0, 0), (0, down_border, width, height))
+        pygame.draw.rect(screen, (0, 0, 0), (r_border, 0, width, height))
+        pygame.draw.rect(screen, (255, 255, 255), (up_border, l_border, r_border - 20, down_border - 20), 2)
 
     def lvl0(self):
         pass
@@ -244,6 +249,11 @@ if __name__ == '__main__':
     flag_key = False
     screen.fill((0, 0, 0))
 
+    up_border = 20
+    down_border = 580
+    l_border = 20
+    r_border = 520
+
     bullets = []
     feinde = []
     fontt = 'C:/Windows/Fonts/bahnschrift.ttf'
@@ -251,7 +261,7 @@ if __name__ == '__main__':
     n = 40
     k = 540
     m = 20
-    step = 4
+    step = 1
     record_score = [0, 0, 0, 1, 0, 10, 0, 0]
     lvl_description = ["""Нулевой уровень. Обучение. Показываются 
     основы игры""", "Первый уровень", "Второй уровень",
@@ -266,7 +276,7 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
+                sys.exit()
             if fl:  # титульняк
                 if timer_title.stop() >= 1000:
                     font = pygame.font.Font(fontt, 50)
@@ -277,25 +287,25 @@ if __name__ == '__main__':
                 fl = False
                 flag_key = True
 
-                game.menu(event.key)
+                if not game.gaming:
+                    game.menu(event.key)
             elif event.type == pygame.KEYUP:
                 flag_key = False
 
-            if game.gaming:
-                if event.type == pygame.KEYDOWN:
-                    if flag_key:
-                        if event.key == pygame.K_UP:
-                            game.player.ymove(-step)
-                            print('ok')
-                        elif event.key == pygame.K_DOWN:
-                            game.player.ymove(step)
-                        elif event.key == pygame.K_RIGHT:
-                            game.player.xmove(step)
-                        elif event.key == pygame.K_LEFT:
-                            game.player.xmove(-step)
-                        screen.fill((0, 0, 0))
-                        game.player.render()
-                        game.extended_ramka()
+        if game.gaming:
+            if event.type == pygame.KEYDOWN:
+                if flag_key:
+                    if event.key == pygame.K_UP and game.player.y > up_border + 7:
+                        game.player.ymove(-step)
+                    if event.key == pygame.K_DOWN and game.player.y < down_border - 7:
+                        game.player.ymove(step)
+                    if event.key == pygame.K_RIGHT and game.player.x < r_border - 7:
+                        game.player.xmove(step)
+                    if event.key == pygame.K_LEFT and game.player.x > l_border + 7:
+                        game.player.xmove(-step)
+                    screen.fill((0, 0, 0))
+                    game.player.render()
+                    game.extended_ramka()
 
         pygame.display.flip()
     pygame.quit()
