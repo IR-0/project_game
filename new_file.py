@@ -26,9 +26,8 @@ class EnemyCommon:  # он же враг нулевого типа
         pass
 
     def shot(self):
-        print(20)
-        if self.__class__ == 'Player0':
-            print(100)
+        if self.__class__.__name__.startswith('Player'):
+            self.bullet_pattern()
 
     def xmove(self, spec, acceleration=1):
         self.x = self.x + int(spec * self.coef_speed * acceleration)
@@ -72,6 +71,9 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
     def __init__(self, hp=1, speed=1, bullet=1, ent=1.0, x=400, y=400):
         print(0)
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
+
+    def bullet_pattern(self):
+        print(0)
 
     def shift(self):
         pass
@@ -292,7 +294,22 @@ if __name__ == '__main__':
                     text = font.render(listt[2], False, (255, 255, 255))
                     screen.blit(text, (200 if sprites_not_exist else 300, 250))
 
-            if event.type == pygame.KEYDOWN:  # ИГРА
+# ===============================================================================================================
+
+            if event.type == pygame.KEYUP and game.gaming:
+                flag_key = False
+                if event.key == pygame.K_UP:
+                    keys[0] = 0
+                if event.key == pygame.K_DOWN:
+                    keys[1] = 0
+                if event.key == pygame.K_RIGHT:
+                    keys[2] = 0
+                if event.key == pygame.K_LEFT:
+                    keys[3] = 0
+                if event.key == pygame.K_z:
+                    fire = False
+
+            if event.type == pygame.KEYDOWN:  # здесь притаилось меню
                 fl = False
                 flag_key = True
 
@@ -302,40 +319,35 @@ if __name__ == '__main__':
                     if event.key == pygame.K_z:
                         fire = True
 
-                if event.key == pygame.K_UP:
-                    keys[0] = 1
-                if event.key == pygame.K_DOWN:
-                    keys[1] = 1
-                if event.key == pygame.K_RIGHT:
-                    keys[2] = 1
-                if event.key == pygame.K_LEFT:
-                    keys[3] = 1
-
-            elif event.type == pygame.KEYUP:
-                flag_key = False
-                keys = [0, 0, 0, 0]
-                if event.key == pygame.K_z:
-                    fire = False
+                    if event.key == pygame.K_UP:
+                        keys[0] = 1
+                    if event.key == pygame.K_DOWN:
+                        keys[1] = 1
+                    if event.key == pygame.K_RIGHT:
+                        keys[2] = 1
+                        keys[3] = 0
+                    if event.key == pygame.K_LEFT:
+                        keys[3] = 1
+                        keys[2] = 0
 
         if game.gaming:
             if event.type == pygame.KEYDOWN:
+                if fire:
+                    game.player.shot()
+
                 if flag_key:
                     if keys[0] and game.player.y > up_border + 7:
                         game.player.ymove(-step)
                     if keys[1] and game.player.y < down_border - 7:
                         game.player.ymove(step)
-                    if keys[2] and game.player.x < r_border - 7:
+                    if keys[2] and (not keys[3]) and game.player.x < r_border - 7:
                         game.player.xmove(step)
-                    if event.key == pygame.K_LEFT and game.player.x > l_border + 7:
+                    if keys[3] and (not keys[2]) and game.player.x > l_border + 7:
                         game.player.xmove(-step)
 
-                if fire:
-                    print(3)
-                    game.player.shot()
-
-                screen.fill((0, 0, 0))
-                game.player.render()
-                game.extended_ramka()
+            screen.fill((0, 0, 0))
+            game.player.render()
+            game.extended_ramka()
 
         pygame.display.flip()
     pygame.quit()
