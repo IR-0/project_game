@@ -13,27 +13,27 @@ clock.tick(fps)
 
 
 class EnemyCommon:  # он же враг нулевого типа
-    def __init__(self, hp=5, speed=0.8, bullet=0.6, entfernung=2.0, x=200, y=20):
+    def __init__(self, hp=5, speed=1, bullet=0.6, entfernung=2.0, x=200, y=20):
         self.x = x
         self.y = y
         self.hp = hp
         self.coef_speed = speed
         self.coef_bullet = bullet
         self.entfernung = entfernung
+        self.acceleration = True
 
     def render(self):
         pygame.draw.circle(screen, (255, 255, 255), (self.x, self.y), 5)
-        pass
 
     def shot(self):
         if self.__class__.__name__.startswith('Player'):
             self.bullet_pattern()
 
-    def xmove(self, spec, acceleration=1):
-        self.x = self.x + int(spec * self.coef_speed * acceleration)
+    def xmove(self, spec):
+        self.x = self.x + int(spec * self.coef_speed * (1 if self.acceleration else 0.5))
 
-    def ymove(self, spec, acceleration=1):
-        self.y = self.y + int(spec * self.coef_speed * acceleration)
+    def ymove(self, spec):
+        self.y = self.y + int(spec * self.coef_speed * (1 if self.acceleration else 0.5))
 
     def death(self):
         pass
@@ -71,18 +71,24 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
     def __init__(self, hp=1, speed=1, bullet=1, ent=1.0, x=400, y=400):
         print(0)
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
+        self.r, self.r_x, self.r_y, self.alpha = 0, 0, 0, 255
 
     def bullet_pattern(self):
         for i in range(-2, 4):
             bullets.append(Bullet(self.x + 10 * i, self.y + 10, 2))
 
+    def bomb(self):
+        if self.r_x == 0 or self.r_y == 0:
+            self.r_x, self.r_y = self.x, self.y
+        if self.r < 300:
+            pygame.draw.circle(screen, (100, 100, 100, abs(self.alpha % 255)), (self.r_x, self.y), self.r)
+            self.alpha -= 1
+            self.r += 1
+
     def shift(self):
         pass
 
     def graze(self):
-        pass
-
-    def bomb(self):
         pass
 
 
@@ -122,6 +128,7 @@ class GeometryBulletHell:
         self.count_for_fertig_lvl = 0
         self.count_for_menu = 0
         self.player = Player0
+        self.var_lvl0 = True
 
     def menu(self, event_key):
         '''главное меню'''
@@ -201,7 +208,10 @@ class GeometryBulletHell:
         pygame.draw.rect(screen, (255, 255, 255), (up_border, l_border, r_border - 20, down_border - 20), 2)
 
     def lvl0(self):
-        pass
+        if self.var_lvl0:
+            for i in range(-5, 0):
+                feinde.append(EnemyCommon(x=l_border + 20 * abs(i), y=up_border + 20 * i))
+            self.var_lvl0 = False
 
     def lvl1(self):
         pass
@@ -292,7 +302,7 @@ if __name__ == '__main__':
                    "Джей. Еще медленнее. Больше разброс, пули самонаводящиеся"]
     count = 0
 
-    keys = [0, 0, 0, 0]
+    keys = [0, 0, 0, 0, 0]
 
     r = iter(range(0, 10000))
 
@@ -322,6 +332,8 @@ if __name__ == '__main__':
                     keys[3] = 0
                 if event.key == pygame.K_z:
                     fire = False
+                if event.key == pygame.K_x:
+                    keys[4] = 1
 
             if event.type == pygame.KEYDOWN:  # здесь притаилось меню
                 fl = False
@@ -330,6 +342,7 @@ if __name__ == '__main__':
                 if not game.gaming:
                     game.menu(event.key)
                 else:
+                    game.lvl0()
                     if event.key == pygame.K_z:
                         fire = True
 
@@ -359,9 +372,15 @@ if __name__ == '__main__':
                     game.player.xmove(-step)
 
             screen.fill((0, 0, 0))
+            if keys[4]:
+                game.player.bomb()
+            for enemy in feinde:
+                enemy.ymove(1)
+                enemy.render()
             for obj in bullets:
-                obj.move()
-                obj.render()
+                if obj.y > 0:
+                    obj.move()
+                    obj.render()
             game.player.render()
             game.extended_ramka()
 
