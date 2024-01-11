@@ -332,6 +332,7 @@ if __name__ == '__main__':
                 if fire:
                     print(3)
                     game.player.shot()
+
                 screen.fill((0, 0, 0))
                 game.player.render()
                 game.extended_ramka()
