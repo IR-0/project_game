@@ -73,7 +73,8 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
 
     def bullet_pattern(self):
-        print(0)
+        for i in range(-2, 4):
+            bullets.append(Bullet(self.x + 10 * i, self.y + 10, 2))
 
     def shift(self):
         pass
@@ -100,6 +101,17 @@ class Player2(Player0):  # s
 class Player3(Player0):  # j
     def __init__(self, x, y):
         super().__init__(speed=0.8, bullet=1.1, ent=1.4, x=x, y=y)
+
+
+class Bullet:
+    def __init__(self, x, y, type):
+        self.x, self.y, self.type = x, y, type
+
+    def move(self):
+        self.y -= 1
+
+    def render(self):
+        pygame.draw.circle(screen, (255, 255, 0), (self.x, self.y), self.type)
 
 
 class GeometryBulletHell:
@@ -213,7 +225,7 @@ class GeometryBulletHell:
         pass
 
 
-class Timer:
+class Timer:  # КОСТЫЛЬ КОТОРЫЙ НЕАДЕКВАТНО РАЮОТАЕТ
     def __init__(self):
         self.time = pygame.time.get_ticks()
 
@@ -282,6 +294,8 @@ if __name__ == '__main__':
 
     keys = [0, 0, 0, 0]
 
+    r = iter(range(0, 10000))
+
     while running:
         events = pygame.event.get()
         for event in events:
@@ -331,21 +345,23 @@ if __name__ == '__main__':
                         keys[2] = 0
 
         if game.gaming:
-            if event.type == pygame.KEYDOWN:
-                if fire:
-                    game.player.shot()
+            if fire:
+                game.player.shot()
 
-                if flag_key:
-                    if keys[0] and game.player.y > up_border + 7:
-                        game.player.ymove(-step)
-                    if keys[1] and game.player.y < down_border - 7:
-                        game.player.ymove(step)
-                    if keys[2] and (not keys[3]) and game.player.x < r_border - 7:
-                        game.player.xmove(step)
-                    if keys[3] and (not keys[2]) and game.player.x > l_border + 7:
-                        game.player.xmove(-step)
+            if flag_key:
+                if keys[0] and game.player.y > up_border + 7:
+                    game.player.ymove(-step)
+                if keys[1] and game.player.y < down_border - 7:
+                    game.player.ymove(step)
+                if keys[2] and (not keys[3]) and game.player.x < r_border - 7:
+                    game.player.xmove(step)
+                if keys[3] and (not keys[2]) and game.player.x > l_border + 7:
+                    game.player.xmove(-step)
 
             screen.fill((0, 0, 0))
+            for obj in bullets:
+                obj.move()
+                obj.render()
             game.player.render()
             game.extended_ramka()
 
