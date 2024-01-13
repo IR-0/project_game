@@ -1,5 +1,5 @@
 import sys
-
+import random
 import pygame
 # from serv import listt
 
@@ -11,12 +11,15 @@ fps = 40
 clock = pygame.time.Clock()
 clock.tick(fps)
 
+LVLONE = pygame.USEREVENT + 2
+
 
 class EnemyCommon:  # он же враг нулевого типа
-    def __init__(self, hp=5, speed=1, bullet=0.6, entfernung=2.0, x=200, y=20):
+    def __init__(self, hp=5, speed=1, b_speed=0.3, bullet=1, entfernung=4, x=200, y=20):
         self.x = x
         self.y = y
         self.hp = hp
+        self.bullet_speed = b_speed
         self.coef_speed = speed
         self.coef_bullet = bullet
         self.entfernung = entfernung
@@ -27,7 +30,10 @@ class EnemyCommon:  # он же враг нулевого типа
 
     def shot(self):
         if self.__class__.__name__.startswith('Player'):
-            self.bullet_pattern()
+            self._bullet_pattern()
+        else:
+            for i in range(-1 * self.coef_bullet, 2 * self.coef_bullet):
+                f_bullets.append(FeindBullet(self.x + 10 * i, self.y + 10, 6, i, self))
 
     def xmove(self, spec):
         self.x = self.x + int(spec * self.coef_speed * (1 if self.acceleration else 0.5))
@@ -41,17 +47,17 @@ class EnemyCommon:  # он же враг нулевого типа
 
 class EnemyType1(EnemyCommon):
     def __init__(self):
-        super().__init__(20, 1, 1, 1)
+        super().__init__(hp=20, speed=1, bullet=1, entfernung=1)
 
 
 class EnemyType3(EnemyCommon):
     def __init__(self):
-        super().__init__(50, 1, 1.5, 0.9)
+        super().__init__(50, 1, 1.5, 6)
 
 
 class EnemyType4(EnemyCommon):
-    def __init__(self, hp=50, speed=2, bullet=1, entfernung=0.8):
-        super().__init__(hp, speed, bullet, entfernung)
+    def __init__(self, hp=50, speed=2, bullet=1, entfernung=1):
+        super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=entfernung)
         self.anticipation = 40
 
     def ruck(self, coef=1):  # уклон
@@ -59,8 +65,8 @@ class EnemyType4(EnemyCommon):
 
 
 class EnemyType7(EnemyType4):
-    def __init__(self):
-        super().__init__(100, 2, 2, 0.7)
+    def __init__(self, speed=2, bullet=2, entfernung=1):
+        super().__init__(speed=speed, bullet=bullet, entfernung=entfernung)
         self.anticipation = 20
 
     def ruck(self):
@@ -68,14 +74,13 @@ class EnemyType7(EnemyType4):
 
 
 class Player0(EnemyCommon):  # h. Общий класс для всех играбельных персонажей
-    def __init__(self, hp=1, speed=1, bullet=1, ent=1.0, x=400, y=400):
-        print(0)
-        super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=ent, x=x, y=y)
+    def __init__(self, hp=1, speed=1, b_s=1, bullet=1, ent=2, x=400, y=400):
+        super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=ent, x=x, y=y)
         self.r, self.r_x, self.r_y, self.alpha = 0, 0, 0, 255
 
-    def bullet_pattern(self):
-        for i in range(-2, 4):
-            bullets.append(Bullet(self.x + 10 * i, self.y + 10, 2))
+    def _bullet_pattern(self):
+        for i in range(-2 * self.coef_bullet, 4 * self.coef_bullet - 1):
+            bullets.append(Bullet(self.x + 10 * i, self.y + 10, 2, i, self))
 
     def bomb(self):
         if self.r_x == 0 or self.r_y == 0:
@@ -85,8 +90,8 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
             self.alpha -= 1
             self.r += 1
 
-    def shift(self):
-        pass
+    def shift(self, off):  # выключить ускорение и замедлить персонажа
+        self.acceleration = False if off else True
 
     def graze(self):
         pass
@@ -95,7 +100,7 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
 class Player1(Player0):  # d
     def __init__(self, x, y):
         print(1)
-        super().__init__(speed=1.3, bullet=0.9, ent=0.8, x=x, y=y)
+        super().__init__(speed=2, bullet=1, ent=1, x=x, y=y)
 
 
 class Player2(Player0):  # s
@@ -110,14 +115,27 @@ class Player3(Player0):  # j
 
 
 class Bullet:
-    def __init__(self, x, y, type):
-        self.x, self.y, self.type = x, y, type
+    def __init__(self, x, y, type, num, owner):
+        self.x, self.y, self.type, self.num = x, y, type, num
+        self.owner = owner
 
     def move(self):
-        self.y -= 1
+        self.y -= int(10 * self.owner.bullet_speed)
+
+    def entfer(self, cl):
+        self.x += cl.entfernung * self.num
 
     def render(self):
         pygame.draw.circle(screen, (255, 255, 0), (self.x, self.y), self.type)
+
+
+class FeindBullet(Bullet):
+    def __init__(self, x, y, type, num, owner):
+        super().__init__(x, y, type, num, owner)
+        self.owner = owner
+
+    def move(self):
+        self.y += int(10 * self.owner.bullet_speed)
 
 
 class GeometryBulletHell:
@@ -285,13 +303,14 @@ if __name__ == '__main__':
     r_border = 520
 
     bullets = []
+    f_bullets = []
     feinde = []
     fontt = 'C:/Windows/Fonts/bahnschrift.ttf'
     # TOD непонятные переменнные (потом переназову)
     n = 40
     k = 540
     m = 20
-    step = 1
+    step = 5
     record_score = [0, 0, 0, 1, 0, 10, 0, 0]
     lvl_description = ["""Нулевой уровень. Обучение. Показываются 
     основы игры""", "Первый уровень", "Второй уровень",
@@ -307,6 +326,9 @@ if __name__ == '__main__':
     r = iter(range(0, 10000))
 
     while running:
+
+        count += 1
+
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.QUIT:
@@ -322,18 +344,22 @@ if __name__ == '__main__':
 
             if event.type == pygame.KEYUP and game.gaming:
                 flag_key = False
-                if event.key == pygame.K_UP:
-                    keys[0] = 0
-                if event.key == pygame.K_DOWN:
-                    keys[1] = 0
-                if event.key == pygame.K_RIGHT:
-                    keys[2] = 0
-                if event.key == pygame.K_LEFT:
-                    keys[3] = 0
+
                 if event.key == pygame.K_z:
                     fire = False
                 if event.key == pygame.K_x:
                     keys[4] = 1
+                if event.key == pygame.K_LSHIFT:
+                    game.player.shift(0)
+
+                if event.key == pygame.K_UP:
+                    keys[0] = 0
+                elif event.key == pygame.K_DOWN:
+                    keys[1] = 0
+                elif event.key == pygame.K_RIGHT:
+                    keys[2] = 0
+                elif event.key == pygame.K_LEFT:
+                    keys[3] = 0
 
             if event.type == pygame.KEYDOWN:  # здесь притаилось меню
                 fl = False
@@ -345,6 +371,8 @@ if __name__ == '__main__':
                     game.lvl0()
                     if event.key == pygame.K_z:
                         fire = True
+                    if event.key == pygame.K_LSHIFT:
+                        game.player.shift(1)
 
                     if event.key == pygame.K_UP:
                         keys[0] = 1
@@ -377,12 +405,22 @@ if __name__ == '__main__':
             for enemy in feinde:
                 enemy.ymove(1)
                 enemy.render()
+                if enemy.y > 22 and count % 30 == 0:
+                    enemy.shot()
             for obj in bullets:
                 if obj.y > 0:
                     obj.move()
+                    obj.entfer(game.player)
                     obj.render()
+            for ob in f_bullets:
+                if ob.y < height:
+                    ob.move()
+                    ob.entfer(game.player)
+                    ob.render()
             game.player.render()
             game.extended_ramka()
+
+            pygame.time.delay(20)
 
         pygame.display.flip()
     pygame.quit()
