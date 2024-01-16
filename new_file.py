@@ -13,7 +13,7 @@ clock.tick(fps)
 
 
 class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого типа
-    def __init__(self, hp=5, speed=0.4, b_speed=0.5, bullet=1, entfernung=3, x=200, y=20):
+    def __init__(self, hp=5, speed=0.2, b_speed=0.5, bullet=1, entfernung=3, x=200, y=20):
         super().__init__(all_dudes)
         self.x = x
         self.y = y
@@ -37,17 +37,22 @@ class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого 
             FeindBullet(self.x + int(10 + random.randint(-10, 10)),
                         self.y + 10, 6, 0, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType1':
-            for i in range(-1 * self.coef_bullet, 2 * self.coef_bullet):
+            for i in range(-1 * self.coef_bullet,  self.coef_bullet):
                 FeindBullet(self.x + int(10 * i + random.randint(-10, 10)),
                             self.y + 15 * i * self.another_coef + 10, 4, i, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType3':
             for i in range(-2 * self.coef_bullet, 3 * self.coef_bullet - 1):
-                FeindBullet(self.x + int(5 * i + random.randint(-20, 20)),
+                FeindBullet(self.x + int(5 * i + random.randint(-30, 30)),
                             self.y - 10 * abs(i) + 10, 8, i * 0.2, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType4':
-            pass
+            for i in range(-2 * self.coef_bullet - 1, 3 * self.coef_bullet + 1):
+                FeindBullet(self.x + int(10 * i + random.randint(-20, 20)),
+                            self.y - 10 * abs(i) + 20, 4, i, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType7':
-            pass
+            self.another_coef = self.another_coef + (-1 if self.another_coef > -3 else 5)
+            for i in range(-1 * self.coef_bullet + self.another_coef, 2 * self.coef_bullet + self.another_coef):
+                FeindBullet(self.x + int(10 * i + random.randint(-20, 20)),
+                            self.y - 10 * abs(i) + 20, 4, i, self).add(f_bullets)
 
     def xmove(self, spec):
         self.x = self.x + int(spec * self.coef_speed * (1 if self.acceleration else 0.5))
@@ -82,18 +87,33 @@ class EnemyType3(EnemyCommon):
 
 
 class EnemyType4(EnemyCommon):
-    def __init__(self, x, y, hp=50, speed=2, bullet=1, entfernung=1):
-        super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=entfernung, x=x, y=y)
-        self.anticipation = 40
+    def __init__(self, x, y, hp=50, speed=2, b_s=0.6, bullet=1, entfernung=1):
+        super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=entfernung, x=x, y=y)
+        self.walk = 3
+        self.anticipation = 20
+        self.stop = 0
+
+    def ymove(self, spec):
+        serv = up_border + 40
+        if self.y > serv and not self.stop:
+            self.stop = 1
+        elif self.y > serv and self.stop == 1:
+            self.stop = 2
+        elif self.y < serv and self.stop == 2:
+            self.stop = 3
+
+        self.y = self.y + int(spec * self.coef_speed * self.walk) + (-1 if self.stop == 2 else 0)
+        self.walk = (self.walk - 0.1) if self.walk > 0 else 0
 
     def ruck(self, coef=1):  # уклон
         pass
 
 
 class EnemyType7(EnemyType4):
-    def __init__(self, speed=2, bullet=2, entfernung=1):
-        super().__init__(speed=speed, bullet=bullet, entfernung=entfernung)
-        self.anticipation = 20
+    def __init__(self, x, y, b_s=1.0, speed=2, bullet=1, entfernung=1):
+        super().__init__(x, y, speed=speed, b_s=b_s, bullet=bullet, entfernung=entfernung)
+        self.another_coef = -1
+        self.anticipation = 50
 
     def ruck(self):
         super().ruck(coef=2)
@@ -174,11 +194,12 @@ class GeometryBulletHell:
         self.choosen_lvl = 0
         self.player_type = 0
         self.gaming = False
+        self.count = 0
         self.count_for_fertig_lvl = 0
         self.count_for_menu = 0
         self.player = Player0
 
-        self.var_lvl0 = 0  # переменные уровней
+        self.var_lvl0 = 0  # служебные переменные уровней
         self.var_lvl1 = 0
         self.var_lvl2 = 0
         self.var_lvl3 = 0
@@ -251,16 +272,20 @@ class GeometryBulletHell:
                 pygame.draw.circle(screen, (255, 255, 255), (470, 60 + 50 * j), 5)
             self.count_for_fertig_lvl = (self.count_for_fertig_lvl + 1) % 3
 
-    def menu_in_game(self):
-        for j in range(3):
-            font = pygame.font.Font(fontt, 10)
-            text = font.render(players[j], False, (100, 100, 100))
-            screen.blit(text, (476, 40 + 50 * j + 5))
-            pygame.draw.rect(screen, (200, 200, 200), (470, 40 + 50 * j, n - 10, n - 10), 1)
+    def menu_in_game(self, key):
+        if key != 'NaN':
+            if key == pygame.K_z:
+                pass
 
-            if self.count_for_fertig_lvl == self.player_type:
-                pygame.draw.circle(screen, (255, 255, 255), (470, 60 + 50 * j), 5)
-            self.count_for_fertig_lvl = (self.count_for_fertig_lvl + 1) % 3
+        serv = (190, 300, 145, 40)
+        font = pygame.font.Font(fontt, 30)
+        text = font.render('ПАУЗА', False, (100, 100, 100))
+        screen.blit(text, (220, 170, 60, 40))
+        pygame.draw.rect(screen, (0, 0, 0), serv)
+        pygame.draw.rect(screen, (200, 200, 200), serv, 1)
+        font = pygame.font.Font(fontt, 15)
+        text = font.render('выйти в меню', False, (100, 100, 100))
+        screen.blit(text, (215, 310, 60, 40))
 
     def ramka(self):
         screen.fill((0, 0, 0))
@@ -281,7 +306,11 @@ class GeometryBulletHell:
         screen.blit(text, (k, m + 20))
 
     def lvl0(self):
-        pass
+        global another
+        if count > 40:
+            another = True
+        elif count > 100:
+            another = False
 
     def lvl1(self):
         if self.var_lvl1 == 0 and count > 100:
@@ -313,24 +342,37 @@ class GeometryBulletHell:
         pass
 
     def lvl3(self):  # атавизм кода
-        if self.var_lvl1 == 3 and count > 1000:
+        if self.var_lvl3 == 0 and count > 20:
+            EnemyType4(x=l_border + 180, y=up_border - 20).add(feinde)
+            self.var_lvl3 += 1
+        if self.var_lvl3 == 3 and count > 1000:
             for i in range(-5, 0):
                 EnemyCommon(x=l_border + 90 * abs(i), y=up_border - 20).add(feinde)
-            for j in range(-1, 3):
+            for j in range(0, 3):
                 EnemyType3(x=l_border + 150 * abs(j) + 100, y=up_border - 20).add(feinde)
-            self.var_lvl1 += 1
+            self.var_lvl3 += 1
 
     def lvl4(self):
         pass
 
     def lvl5(self):
-        pass
+        if self.var_lvl5 == 0 and count > 30:
+            EnemyType7(x=l_border + 150, y=up_border - 20).add(feinde)
+            self.var_lvl5 += 1
 
     def lvl6(self):
         pass
 
     def lvl7(self):
         pass
+
+    def end_lvl(self):
+        global feinde, f_bullets, bullets
+        feinde = pygame.sprite.Group()
+        f_bullets = pygame.sprite.Group()
+        bullets = pygame.sprite.Group()
+        for i in range(8):
+            eval(f'self.var_lvl{i} = 0')
 
 # ===================================================ПРОГРАММА===============================================
 
@@ -365,7 +407,7 @@ if __name__ == '__main__':
     f_bullets = pygame.sprite.Group()
     feinde = pygame.sprite.Group()
     fontt = 'C:/Windows/Fonts/bahnschrift.ttf'
-    # TOD непонятные переменнные (потом переназову)
+    # TODO непонятные переменнные (потом переназову)
     n = 40
     k = 540
     m = 20
@@ -374,10 +416,10 @@ if __name__ == '__main__':
     flag_key = False
     fire = False
     game_menu = False
+    another = False
     step = 5
     record_score = [0, 0, 0, 1, 0, 10, 0, 0]
-    lvl_description = ["""Нулевой уровень. Обучение. Показываются 
-    основы игры""", "Первый уровень", "Второй уровень",
+    lvl_description = ["""Нулевой уровень. Обучение""", "Первый уровень", "Второй уровень",
                        "Третий уровень", "Четвертый уровень", "Пятый уровень", "Шестой уровень. Финальный",
                        "Седьмой уровень. Секретный"]
     players = ['H', 'D', 'S']
@@ -487,8 +529,13 @@ if __name__ == '__main__':
                             if count % 40 == 0 and spice == 'EnemyCommon':
                                 enemy.shot()
                             if count % 20 == 0 and spice == 'EnemyType1':
+                                enemy.another_coef = - enemy.another_coef
                                 enemy.shot()
                             if count % 50 == 0 and spice == 'EnemyType3':
+                                enemy.shot()
+                            if count % 10 == 0 and spice == 'EnemyType4':
+                                enemy.shot()
+                            if count % 10 == 0 and spice == 'EnemyType7':
                                 enemy.shot()
 
                 for obj in bullets:  # пули игрока
@@ -496,7 +543,7 @@ if __name__ == '__main__':
                         obj.move()
                         obj.render()
 
-                if pygame.sprite.spritecollide(game.player, f_bullets, False):
+                if pygame.sprite.spritecollideany(game.player, f_bullets):
                     print('noo')
 
                 for ob in f_bullets:  # пули врага
@@ -508,7 +555,10 @@ if __name__ == '__main__':
                         ob.remove(f_bullets)  # ? почему ничего не удаляется из списка
                     # print(2, len(f_bullets))
             else:
-                game.menu_in_game()
+                if event.type == pygame.KEYDOWN:
+                    game.menu_in_game(event.key)
+                else:
+                    game.menu_in_game('NaN')
 
             game.player.render()
             game.extended_ramka()
@@ -516,6 +566,15 @@ if __name__ == '__main__':
                                                           (game.player.x, down_border + 6),
                                                           (game.player.x + 13, down_border + 14)))
             game.score_render()
+            if another:
+                font = pygame.font.Font(fontt, 15)
+                text0 = font.render('передвижение по стрелочкам', False, (255, 255, 255))
+                text1 = font.render('стрельба на клавишу "я"', False, (255, 255, 255))
+                text2 = font.render('активирование бомбы на клавишу "ч"', False, (255, 255, 255))
+                text3 = font.render('замедлиться на левый shift', False, (255, 255, 255))
+                text = [text0, text1, text2, text3]
+                for i in range(4):
+                    screen.blit(text[i], (40, 350 + i * 20, 60, 40))
 
             if not sekret:
                 pygame.time.delay(20)
