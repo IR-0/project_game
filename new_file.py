@@ -45,7 +45,7 @@ class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого 
                 FeindBullet(self.x + int(5 * i + random.randint(-30, 30)),
                             self.y - 10 * abs(i) + 10, 8, i * 0.2, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType4':
-            for i in range(-2 * self.coef_bullet - 1, 3 * self.coef_bullet + 1):
+            for i in range(-2 * self.coef_bullet - 1 - game.difficult, 3 * self.coef_bullet + 1 + game.difficult):
                 FeindBullet(self.x + int(10 * i + random.randint(-20, 20)),
                             self.y - 10 * abs(i) + 20, 4, i, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType7':
@@ -167,11 +167,12 @@ class Player1(Player0):  # d
 
 class Player2(Player0):  # s
     def __init__(self, x, y):
-        super().__init__(speed=0.9, bullet=2, ent=3, x=x, y=y)
+        super().__init__(speed=0.9, bullet=1, ent=3, x=x, y=y)
 
     def _bullet_pattern(self):
-        for i in range(-2 * self.coef_bullet, 4 * self.coef_bullet - 1):
-            Bullet(self.x + 10 * i, self.y - 10, 2, i, self).add(bullets)
+        for i in range(-2 * self.coef_bullet, 3 * self.coef_bullet):
+            Bullet(self.x + int(5 * i + random.randint(-30, 30)),
+                   self.y - 20 * abs(i) + 10, 1, i, self).add(bullets)
 
 
 class GrazeHitBox(pygame.sprite.Sprite):
@@ -235,6 +236,8 @@ class GeometryBulletHell:
         self.var_lvl5 = 0
         self.var_lvl6 = 0
         self.var_lvl7 = 0
+
+        self.for_lvl1 = []
 
     def menu(self, eventt):
         '''главное меню'''
@@ -359,10 +362,8 @@ class GeometryBulletHell:
         global another
         if 40 < count < 99:
             another = True
-        elif self.var_lvl0 == 0:
-            print(another)
+        elif self.var_lvl0 == 0 and count > 100:
             another = False
-            print(another)
             self.var_lvl0 += 1
 
         elif self.var_lvl0 == 1 and count > 130:
@@ -371,13 +372,13 @@ class GeometryBulletHell:
 
     def lvl1(self):
         if self.var_lvl1 == 0 and count > 100:
-            for i in range(-5, 0):
-                EnemyCommon(x=l_border + 50 * abs(i), y=up_border + 50 * i).add(feinde)
+            for i in range(-5, game.difficult):
+                EnemyCommon(x=l_border + 50 * abs(i) + 20, y=up_border + 50 * i).add(feinde)
             self.var_lvl1 += 1
 
         elif self.var_lvl1 == 1 and count > 300:
-            for i in range(-5, 0):
-                EnemyCommon(x=r_border + 50 * i, y=up_border + 50 * i).add(feinde)
+            for i in range(-5, game.difficult):
+                EnemyCommon(x=r_border + 50 * i - 20, y=up_border + 50 * i).add(feinde)
             self.var_lvl1 += 1
 
         elif self.var_lvl1 == 2 and count > 600:
@@ -386,14 +387,36 @@ class GeometryBulletHell:
                 if i % 2 != 0:
                     feind.another_coef = 1
                 feind.add(feinde)
+                self.for_lvl1.append(feind)
             self.var_lvl1 += 1
 
         elif self.var_lvl1 == 3 and count > 1000:
             for i in range(-5, 0):
                 EnemyCommon(x=l_border + 90 * abs(i), y=up_border - 20).add(feinde)
-            EnemyType3(x=l_border + 280, y=up_border - 20).add(feinde)
-            EnemyType3(x=l_border + 220, y=up_border - 200).add(feinde)
+            x = EnemyType3(x=l_border + 280, y=up_border - 20)
+            x.add(feinde)
+            self.for_lvl1.append(x)
+            y = EnemyType3(x=l_border + 220, y=up_border - 200)
+            y.add(feinde)
+            self.for_lvl1.append(y)
+            if game.difficult:
+                w = EnemyType3(x=l_border + 340, y=up_border - 80)
+                w.add(feinde)
+                self.for_lvl1.append(w)
+                z = EnemyType3(x=l_border + 160, y=up_border - 100)
+                z.add(feinde)
+                self.for_lvl1.append(z)
             self.var_lvl1 += 1
+
+        elif self.var_lvl1 == 4:
+            if all([h.hp < 1 for h in self.for_lvl1]):
+                self.var_lvl1 += 1
+
+        elif count > 2000:
+            self.var_lvl1 = 5
+
+        elif self.var_lvl1 == 5:
+            self.end_lvl(1)
 
     def lvl2(self):
         pass
@@ -439,7 +462,11 @@ class GeometryBulletHell:
         self.var_lvl7 = 0
 
         if on_off:  # подчет итогов
-            pass
+            score = self.graze * 100 + self.count_killed * 10 * self.player.hp
+            if self.difficult:
+                score = score * 2
+            if score > record_score[self.choosen_lvl]:
+                record_score[self.choosen_lvl] = score
 
         self.graze, self.count_killed = 0, 0
         game.gaming = False
@@ -592,6 +619,7 @@ if __name__ == '__main__':
 
                 for enemy in feinde:
                     spice = enemy.__class__.__name__
+                    print(enemy.hp, spice)
                     if spice == 'Player0':
                         print(0)
                         continue
@@ -622,11 +650,15 @@ if __name__ == '__main__':
                         obj.render()
 
                 game.player.graze()
-                if pygame.sprite.spritecollideany(game.player, f_bullets):
+                if pygame.sprite.spritecollideany(game.player, f_bullets) and count % 3 == 0:
                     game.player.hp -= 1
+                    if game.player.hp == 0:
+                        game.end_lvl(0)
+                        font = pygame.font.Font(fontt, 70)
+                        text = font.render('GAME OVER', False, (100, 100, 100))
+                        screen.blit(text, (l_border + 80, up_border + 200))
 
                 for ob in f_bullets:  # пули врага
-                    # print(1, len(f_bullets))
                     if ob.y < height:
                         ob.move()
                         ob.render()
