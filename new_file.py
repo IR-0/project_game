@@ -1,4 +1,5 @@
 import sys
+import os
 import random
 import pygame
 # from serv import listt
@@ -67,7 +68,7 @@ class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого 
 
 
 class EnemyType1(EnemyCommon):
-    def __init__(self, x, y, hp=20, speed=0.8, bullet=2, entfernung=1):
+    def __init__(self, x, y, hp=10, speed=0.8, bullet=2, entfernung=1):
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.walk = 3
         self.another_coef = -1
@@ -79,7 +80,7 @@ class EnemyType1(EnemyCommon):
 
 
 class EnemyType3(EnemyCommon):
-    def __init__(self, x, y, hp=50, b_s=0.2, speed=0.2, bullet=2, entfernung=4):
+    def __init__(self, x, y, hp=1000, b_s=0.2, speed=0.2, bullet=2, entfernung=4):
         super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.walk = 3
 
@@ -91,7 +92,7 @@ class EnemyType3(EnemyCommon):
 
 
 class EnemyType4(EnemyCommon):
-    def __init__(self, x, y, hp=50, speed=2, b_s=0.6, bullet=1, entfernung=1):
+    def __init__(self, x, y, hp=20, speed=2, b_s=0.6, bullet=1, entfernung=1):
         super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.walk = 3
         self.anticipation = 20
@@ -237,10 +238,9 @@ class GeometryBulletHell:
         self.var_lvl6 = 0
         self.var_lvl7 = 0
 
-        self.for_lvl1 = []
-
     def menu(self, eventt):
         '''главное меню'''
+        global arrow
         self.ramka()
         font = pygame.font.Font(fontt, 13)
         text = font.render('sum of record score: ' + str(sum(record_score)), False, (140, 140, 140))
@@ -261,6 +261,14 @@ class GeometryBulletHell:
 
             elif eventt == pygame.K_z:  # ================================ КНОПКА СУДЬБЫ =========================
                 global count
+                if self.choosen_lvl == 7 and sum(record_score) < 1000:
+                    font = pygame.font.Font(None, 40)
+                    text = font.render('играйте, чтобы открыть уровень', False, (100, 100, 100))
+                    screen.blit(text, (40, 300))
+                    return
+                elif self.choosen_lvl == 7 and sum(record_score) >= 1000:
+                    print('accesss')
+                    return
                 x, y = 270, 550
                 if self.player_type == 0:
                     self.player = Player0(x=x, y=y)
@@ -275,13 +283,21 @@ class GeometryBulletHell:
                 count = 0
                 return
         else:
-            try:
-                x, y = eventt.pos
+            x, y = eventt.pos
+            if event.type == pygame.MOUSEMOTION:
+                arrow.rect.x = x
+                arrow.rect.y = y
+
+            if eventt.type == pygame.MOUSEBUTTONDOWN:
+                print(0)
                 if eventt.pos:
                     if (400 < x < 430) and (40 < y < 70):
                         self.difficult = not self.difficult
-            except Exception as e:
-                print(e)
+
+            if pygame.mouse.get_focused():
+                pygame.mouse.set_visible(False)
+            else:
+                pygame.mouse.set_visible(True)
 
         # размещение уровней и игрока в меню. Описание уровней
         for j in range(2):
@@ -322,6 +338,8 @@ class GeometryBulletHell:
         screen.blit(text, (402, 47))
         pygame.draw.rect(screen, (200, 200, 200), (400, 40, n - 10, n - 10), 1)
 
+        arrow_group.draw(screen)
+
     def menu_in_game(self, key):
         global game_menu
         if key != 'NaN':
@@ -353,9 +371,9 @@ class GeometryBulletHell:
         pygame.draw.rect(screen, (0, 0, 0), (r_border, 0, width, height))
         pygame.draw.rect(screen, (255, 255, 255), (up_border, l_border, r_border - 20, down_border - 20), 2)
 
-    def score_render(self):   # TODO
+    def score_render(self, var=0):   # TODO
         font = pygame.font.Font(fontt, 20)
-        text = font.render(str(record_score[self.choosen_lvl]), False, (100, 100, 100))
+        text = font.render(str(record_score[self.choosen_lvl]) if not var else str(var), False, (100, 100, 100))
         screen.blit(text, (k, m + 20))
 
     def lvl0(self):
@@ -387,36 +405,29 @@ class GeometryBulletHell:
                 if i % 2 != 0:
                     feind.another_coef = 1
                 feind.add(feinde)
-                self.for_lvl1.append(feind)
             self.var_lvl1 += 1
 
         elif self.var_lvl1 == 3 and count > 1000:
             for i in range(-5, 0):
                 EnemyCommon(x=l_border + 90 * abs(i), y=up_border - 20).add(feinde)
-            x = EnemyType3(x=l_border + 280, y=up_border - 20)
-            x.add(feinde)
-            self.for_lvl1.append(x)
-            y = EnemyType3(x=l_border + 220, y=up_border - 200)
-            y.add(feinde)
-            self.for_lvl1.append(y)
+            EnemyType3(x=l_border + 280, y=up_border - 20).add(feinde)
+            EnemyType3(x=l_border + 220, y=up_border - 200).add(feinde)
             if game.difficult:
-                w = EnemyType3(x=l_border + 340, y=up_border - 80)
-                w.add(feinde)
-                self.for_lvl1.append(w)
-                z = EnemyType3(x=l_border + 160, y=up_border - 100)
-                z.add(feinde)
-                self.for_lvl1.append(z)
+                EnemyType3(x=l_border + 340, y=up_border - 80).add(feinde)
+                EnemyType3(x=l_border + 160, y=up_border - 100).add(feinde)
             self.var_lvl1 += 1
 
         elif self.var_lvl1 == 4:
-            if all([h.hp < 1 for h in self.for_lvl1]):
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
                 self.var_lvl1 += 1
 
         elif count > 2000:
             self.var_lvl1 = 5
 
         elif self.var_lvl1 == 5:
-            self.end_lvl(1)
+            print('all')
+            pass
+            # self.end_lvl(1)
 
     def lvl2(self):
         pass
@@ -425,7 +436,8 @@ class GeometryBulletHell:
         if self.var_lvl3 == 0 and count > 20:
             EnemyType4(x=l_border + 180, y=up_border - 20).add(feinde)
             self.var_lvl3 += 1
-        if self.var_lvl3 == 3 and count > 1000:
+
+        elif self.var_lvl3 == 3 and count > 1000:
             for i in range(-5, 0):
                 EnemyCommon(x=l_border + 90 * abs(i), y=up_border - 20).add(feinde)
             for j in range(0, 3):
@@ -461,16 +473,36 @@ class GeometryBulletHell:
         self.var_lvl6 = 0
         self.var_lvl7 = 0
 
-        if on_off:  # подчет итогов
-            score = self.graze * 100 + self.count_killed * 10 * self.player.hp
-            if self.difficult:
-                score = score * 2
-            if score > record_score[self.choosen_lvl]:
-                record_score[self.choosen_lvl] = score
-
+        self.score(on_off)
         self.graze, self.count_killed = 0, 0
         game.gaming = False
         return
+
+    def score(self, on_off):  # подчет итогов
+        score = self.graze * 100 + self.count_killed * 10 * self.player.hp
+        if self.difficult:
+            score = score * 2
+        self.score_render(var=score)
+
+        if score > record_score[self.choosen_lvl] and on_off:
+            record_score[self.choosen_lvl] = score
+
+
+def load_image(name, colorkey=None):
+    fullname = os.path.join(name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
+
 
 # ===================================================ПРОГРАММА===============================================
 
@@ -529,6 +561,11 @@ if __name__ == '__main__':
 
     r = iter(range(0, 10000))  # sekret
     sekret = 0
+
+    arrow_group = pygame.sprite.Group()
+    arrow = pygame.sprite.Sprite(arrow_group)
+    arrow.image = load_image('katze.png')
+    arrow.rect = arrow.image.get_rect()
 
     while running:
 
@@ -595,7 +632,8 @@ if __name__ == '__main__':
                     keys[2] = 0
 
             if not game.gaming and (event.type == pygame.KEYDOWN or
-                                    (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1)):
+                                    event.type == pygame.MOUSEMOTION) or \
+                    (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1):
                 game.menu(event)
 
         if game.gaming:
@@ -619,7 +657,8 @@ if __name__ == '__main__':
 
                 for enemy in feinde:
                     spice = enemy.__class__.__name__
-                    print(enemy.hp, spice)
+                    if spice == 'EnemyType1':
+                        print(enemy.hp, spice)
                     if spice == 'Player0':
                         print(0)
                         continue
@@ -648,10 +687,12 @@ if __name__ == '__main__':
                     if obj.y > 0:
                         obj.move()
                         obj.render()
+                    else:
+                        obj.kill()
 
                 game.player.graze()
                 if pygame.sprite.spritecollideany(game.player, f_bullets) and count % 3 == 0:
-                    game.player.hp -= 1
+                    # game.player.hp -= 1
                     if game.player.hp == 0:
                         game.end_lvl(0)
                         font = pygame.font.Font(fontt, 70)
@@ -662,6 +703,8 @@ if __name__ == '__main__':
                     if ob.y < height:
                         ob.move()
                         ob.render()
+                    elif ob.y > height:
+                        ob.kill()
             else:
                 for event in events:
                     if event.type == pygame.KEYDOWN:
