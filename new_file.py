@@ -290,12 +290,12 @@ class GeometryBulletHell:
 
             elif eventt == pygame.K_z:  # ================================ КНОПКА СУДЬБЫ =========================
                 global count
-                if self.choosen_lvl == 7 and sum(record_score) < 1_000:
+                if self.choosen_lvl == 7 and sum(record_score) < 500_000:
                     font = pygame.font.Font(None, 40)
                     text = font.render('играйте, чтобы открыть уровень', False, (100, 100, 100))
                     screen.blit(text, (40, 300))
                     return
-                elif self.choosen_lvl == 7 and sum(record_score) >= 1_000:
+                elif self.choosen_lvl == 7 and sum(record_score) >= 500_000:
                     print('accesss')
                 x, y = 270, 550
                 if self.player_type == 0:
