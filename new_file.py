@@ -38,20 +38,22 @@ class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого 
             FeindBullet(self.x + int(10 + random.randint(-10, 10)),
                         self.y + 10, 6, 0, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType1':
-            for i in range(-1 * self.coef_bullet,  self.coef_bullet):
+            for i in range(-1 * self.coef_bullet - int(game.difficult),  self.coef_bullet + int(game.difficult)):
                 FeindBullet(self.x + int(10 * i + random.randint(-10, 10)),
                             self.y + 15 * i * self.another_coef + 10, 4, i, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType3':
-            for i in range(-2 * self.coef_bullet, 3 * self.coef_bullet - 1):
+            for i in range(-2 * self.coef_bullet - int(game.difficult), 3 * self.coef_bullet - 1 + int(game.difficult)):
                 FeindBullet(self.x + int(5 * i + random.randint(-30, 30)),
                             self.y - 10 * abs(i) + 10, 8, i * 0.2, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType4':
-            for i in range(-2 * self.coef_bullet - 1 - game.difficult, 3 * self.coef_bullet + 1 + game.difficult):
+            for i in range(-2 * self.coef_bullet - 1 - int(game.difficult),
+                           3 * self.coef_bullet + 1 + int(game.difficult)):
                 FeindBullet(self.x + int(10 * i + random.randint(-20, 20)),
                             self.y - 10 * abs(i) + 20, 4, i, self).add(f_bullets)
         elif self.__class__.__name__ == 'EnemyType7':
             self.another_coef = self.another_coef + (-1 if self.another_coef > -3 else 5)
-            for i in range(-1 * self.coef_bullet + self.another_coef, 2 * self.coef_bullet + self.another_coef):
+            for i in range(-1 * self.coef_bullet + self.another_coef - int(not game.difficult),
+                           2 * self.coef_bullet + self.another_coef + int(not game.difficult)):
                 FeindBullet(self.x + int(10 * i + random.randint(-20, 20)),
                             self.y - 10 * abs(i) + 20, 4, i, self).add(f_bullets)
 
@@ -68,7 +70,7 @@ class EnemyCommon(pygame.sprite.Sprite):  # он же враг нулевого 
 
 
 class EnemyType1(EnemyCommon):
-    def __init__(self, x, y, hp=10, speed=0.8, bullet=2, entfernung=1):
+    def __init__(self, x, y, hp=20, speed=0.8, bullet=2, entfernung=1):
         super().__init__(hp=hp, speed=speed, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.walk = 3
         self.another_coef = -1
@@ -80,7 +82,7 @@ class EnemyType1(EnemyCommon):
 
 
 class EnemyType3(EnemyCommon):
-    def __init__(self, x, y, hp=30, b_s=0.2, speed=0.2, bullet=2, entfernung=4):
+    def __init__(self, x, y, hp=50, b_s=0.2, speed=0.2, bullet=2, entfernung=4):
         super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.walk = 3
 
@@ -92,7 +94,7 @@ class EnemyType3(EnemyCommon):
 
 
 class EnemyType4(EnemyCommon):
-    def __init__(self, x, y, hp=100, speed=2, b_s=0.6, bullet=1, entfernung=1, anti=20):
+    def __init__(self, x, y, hp=80, speed=2, b_s=0.6, bullet=1, entfernung=1, anti=20):
         super().__init__(hp=hp, speed=speed, b_speed=b_s, bullet=bullet, entfernung=entfernung, x=x, y=y)
         self.anticipation = anti
         self.graze = HitBox(self.x - self.anticipation // 2, self.y - self.anticipation // 2, self.anticipation)
@@ -120,9 +122,8 @@ class EnemyType4(EnemyCommon):
         self.rect.x = self.x - v
         self.graze.rect.x = self.x - self.anticipation // 2
 
-    def ruck(self):  # уклон
+    def ruck(self):  # уклон от пуль врагом
         if pygame.sprite.spritecollideany(self.graze, bullets):
-            print(next(r))
             if count % (1000 // self.anticipation) == 0:
                 self.to_x = -1 if self.to_x == 1 else 1
 
@@ -145,7 +146,7 @@ class Player0(EnemyCommon):  # h. Общий класс для всех игра
         self.graze_rect = HitBox(self.x - 20, self.y - 20, 40)
         self.bombing = None
         self.gr_bomb = pygame.sprite.Group()
-        self.count_b = 5
+        self.count_b = 3
 
     def xmove(self, spec):
         super().xmove(spec)
@@ -199,7 +200,7 @@ class Player2(Player0):  # s
         super().__init__(speed=0.9, bullet=1, ent=3, x=x, y=y)
 
     def _bullet_pattern(self):
-        for i in range(-2 * self.coef_bullet, 3 * self.coef_bullet):
+        for i in range(-2 * self.coef_bullet, 3 * self.coef_bullet, 2):
             Bullet(self.x + int(5 * i + random.randint(-30, 30)),
                    self.y - 20 * abs(i) + 10, 2, i, self).add(bullets)
 
@@ -212,7 +213,7 @@ class HitBox(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, typee, num, owner):
-        super().__init__(bullets if type(self) == 'Bullet' else f_bullets)
+        super().__init__(bullets if self.__class__.__name__ == 'Bullet' else f_bullets)
         self.x, self.y, self.type, self.num = x, y, typee, num
         self.rect = pygame.Rect((x - (typee // 2), y - (typee // 2)), (typee, typee))
         self.owner = owner
@@ -289,14 +290,13 @@ class GeometryBulletHell:
 
             elif eventt == pygame.K_z:  # ================================ КНОПКА СУДЬБЫ =========================
                 global count
-                if self.choosen_lvl == 7 and sum(record_score) < 1000:
+                if self.choosen_lvl == 7 and sum(record_score) < 1_000:
                     font = pygame.font.Font(None, 40)
                     text = font.render('играйте, чтобы открыть уровень', False, (100, 100, 100))
                     screen.blit(text, (40, 300))
                     return
-                elif self.choosen_lvl == 7 and sum(record_score) >= 1000:
+                elif self.choosen_lvl == 7 and sum(record_score) >= 1_000:
                     print('accesss')
-                    return
                 x, y = 270, 550
                 if self.player_type == 0:
                     self.player = Player0(x=x, y=y)
@@ -425,18 +425,35 @@ class GeometryBulletHell:
         elif self.var_lvl0 == 5:
             self.end_lvl(1)
 
-        self.score(0)
-        self.score_render(var=9)
+        sc = self.score(0)
+        self.score_render(var=sc)
 
     def lvl1(self):
         if self.var_lvl1 == 0 and count > 40:
-            EnemyCommon(x=l_border + 200, y=up_border - 10).add(feinde)
-            EnemyCommon(x=l_border + 200, y=up_border - 10).add(feinde)
+            if self.difficult:
+                for j in range(4):
+                    EnemyCommon(x=l_border + 100 * j + 90, y=up_border - 10).add(feinde)
+            else:
+                EnemyCommon(x=l_border + 200, y=up_border - 10).add(feinde)
+                EnemyCommon(x=l_border + 300, y=up_border - 10).add(feinde)
             self.var_lvl1 += 1
 
-        elif self.var_lvl2 == 5:
+        elif self.var_lvl1 == 1 and count > 240:
+            for i in range(5):
+                EnemyCommon(x=l_border + 80 * i + 100, y=up_border - 10).add(feinde)
+            self.var_lvl1 += 1
+
+        elif self.var_lvl1 == 2 and count > 400:
+            EnemyType1(x=l_border + 140, y=up_border - 10).add(feinde)
+            EnemyType1(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl1 += 1
+
+        elif self.var_lvl1 == 3:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl1 += 1
+
+        elif self.var_lvl1 == 4:
             self.end_lvl(1)
-            return
 
         sc = self.score(0)
         self.score_render(var=sc)
@@ -489,32 +506,187 @@ class GeometryBulletHell:
             EnemyType4(x=l_border + 180, y=up_border - 20).add(feinde)
             self.var_lvl3 += 1
 
-        elif self.var_lvl3 == 3 and count > 1000:
+        elif self.var_lvl3 == 1 and count > 260:
             for i in range(-5, 0):
                 EnemyCommon(x=l_border + 90 * abs(i), y=up_border - 20).add(feinde)
             for j in range(0, 3):
                 EnemyType3(x=l_border + 150 * abs(j) + 100, y=up_border - 20).add(feinde)
             self.var_lvl3 += 1
 
+        elif self.var_lvl3 == 2 and count > 700:
+            EnemyType1(x=l_border + 140, y=up_border - 10).add(feinde)
+            EnemyType1(x=l_border + 400, y=up_border - 10).add(feinde)
+            EnemyType3(x=l_border + 250, y=up_border - 20).add(feinde)
+            self.var_lvl3 += 1
+
+        elif self.var_lvl3 == 3:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl3 += 1
+
+        elif self.var_lvl3 == 4:
+            self.end_lvl(1)
+
+        sc = self.score(0)
+        self.score_render(var=sc)
+
     def lvl4(self):
-        pass
+        if self.var_lvl4 == 0 and count > 30:
+            EnemyType3(x=l_border + 200, y=up_border - 10).add(feinde)
+            EnemyType3(x=l_border + 300, y=up_border - 10).add(feinde)
+            self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 1 and count > 190:
+            EnemyType1(x=l_border + 250, y=up_border - 10).add(feinde)
+            self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 2 and count > 300:
+            EnemyType1(x=l_border + 100, y=up_border - 10).add(feinde)
+            self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 3 and count > 400:
+            EnemyType1(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 4 and count > 500:
+            EnemyType4(x=l_border + 250, y=up_border - 10).add(feinde)
+            self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 5:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl4 += 1
+
+        elif self.var_lvl4 == 6:
+            self.end_lvl(1)
+
+        print(self.var_lvl4)
+
+        sc = self.score(0)
+        self.score_render(var=sc)
 
     def lvl5(self):
         if self.var_lvl5 == 0 and count > 30:
             EnemyType7(x=l_border + 150, y=up_border - 20).add(feinde)
             self.var_lvl5 += 1
 
+        elif self.var_lvl5 == 1 and count > 200:
+            EnemyType3(x=l_border + 100, y=up_border - 10).add(feinde)
+            self.var_lvl5 += 1
+
+        elif self.var_lvl5 == 2 and count > 250:
+            EnemyType3(x=l_border + 250, y=up_border - 10).add(feinde)
+            self.var_lvl5 += 1
+
+        elif self.var_lvl5 == 3 and count > 300:
+            EnemyType3(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl5 += 1
+
+        elif self.var_lvl5 == 4 and count > 500:
+            EnemyType7(x=l_border + 150, y=up_border - 10).add(feinde)
+            EnemyType7(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl5 += 1
+
+        elif self.var_lvl5 == 5:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl5 += 1
+
+        elif self.var_lvl5 == 6:
+            self.end_lvl(1)
+
+        sc = self.score(0)
+        self.score_render(var=sc)
+
     def lvl6(self):
-        pass
+        if self.var_lvl6 == 0 and count > 40:
+            for i in range(-3, game.difficult):
+                EnemyType4(x=l_border + 100 * abs(i) + 20, y=up_border + 50 * i).add(feinde)
+            self.var_lvl6 += 1
+
+        elif self.var_lvl6 == 1 and count > 400:
+            EnemyType1(x=l_border + 220, y=up_border - 10).add(feinde)
+            EnemyType1(x=l_border + 270, y=up_border - 10).add(feinde)
+            EnemyType3(x=l_border + 100, y=up_border - 10).add(feinde)
+            EnemyType3(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl6 += 1
+
+        elif self.var_lvl6 == 2 and count > 900:
+            for i in range(-5, int(game.difficult)):
+                EnemyType1(x=l_border + 80 * abs(i) + 20, y=up_border - 10).add(feinde)
+            self.var_lvl6 += 1
+
+        elif self.var_lvl6 == 3:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl6 += 1
+
+        if self.var_lvl6 == 4:
+            self.end_lvl(1)
+
+        sc = self.score(0)
+        self.score_render(var=sc)
 
     def lvl7(self):
-        pass
+        print(self.var_lvl7, count)
+        if self.var_lvl7 == 0 and count > 40:
+            EnemyType7(x=l_border + 100, y=up_border - 10).add(feinde)
+            EnemyType7(x=l_border + 400, y=up_border - 10).add(feinde)
+            EnemyType3(x=l_border + 250, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 1 and count > 200:
+            for i in range(-5, int(game.difficult)):
+                EnemyType1(x=l_border + 80 * abs(i) + 20, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 2 and count > 500:
+            EnemyType7(x=l_border + 100, y=up_border - 10).add(feinde)
+            EnemyType7(x=l_border + 150, y=up_border - 10).add(feinde)
+            EnemyType7(x=l_border + 300, y=up_border - 10).add(feinde)
+            EnemyType7(x=l_border + 350, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 3 and count > 900:
+            EnemyType3(x=l_border + 100, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 4 and count > 1000:
+            EnemyType1(x=l_border + 100, y=up_border - 10).add(feinde)
+            EnemyType1(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 5 and count > 1100:
+            EnemyType3(x=l_border + 250, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 6 and count > 1200:
+            EnemyType1(x=l_border + 210, y=up_border - 10).add(feinde)
+            EnemyType1(x=l_border + 270, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 7 and count > 1300:
+            EnemyType3(x=l_border + 400, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 8 and count > 1400:
+            for i in range(-6, int(game.difficult)):
+                EnemyType1(x=l_border + 80 * abs(i) + 20, y=up_border - 10).add(feinde)
+            self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 9:
+            if all([(h.hp < 1 or h.y > height) for h in feinde]):
+                self.var_lvl7 += 1
+
+        elif self.var_lvl7 == 10:
+            self.end_lvl(1)
+
+        sc = self.score(0)
+        self.score_render(var=sc)
 
     def end_lvl(self, on_off):
-        global feinde, f_bullets, bullets
+        global feinde, f_bullets, bullets, keys, another
         feinde = pygame.sprite.Group()
         f_bullets = pygame.sprite.Group()
         bullets = pygame.sprite.Group()
+        keys = [0, 0, 0, 0, 0]
+        another = False
         # это прискорбно сообщать, но через eval и цикл не работает
         self.var_lvl0 = 0
         self.var_lvl1 = 0
@@ -586,7 +758,7 @@ else:
 
 if __name__ == '__main__':
     if sprites_not_exist:
-        listt = ['TEST GAME', 'image.png', 'test']
+        listt = ['GEOMETRY HELL', 'image.png', '']
 
     pygame.display.set_caption(listt[0])
     im = pygame.image.load(listt[1])
@@ -659,7 +831,8 @@ if __name__ == '__main__':
 # ===============================================================================================================
 
             if event.type == pygame.KEYUP and game.gaming:
-                flag_key = False
+                if not pygame.key.get_pressed():
+                    flag_key = False
 
                 if event.key == pygame.K_z:
                     fire = False
@@ -758,10 +931,17 @@ if __name__ == '__main__':
                                 enemy.xmove(2)
                                 if count % 10 == 0:
                                     enemy.to_x = 0
-                            if count % 10 == 0 and spice == 'EnemyType7':
-                                enemy.shot()
-                                enemy.ruck()
-                                enemy.xmove(2)
+                            if spice == 'EnemyType7':
+                                if game.difficult:
+                                    if count % 10 == 0:
+                                        enemy.shot()
+                                        enemy.ruck()
+                                        enemy.xmove(2)
+                                else:
+                                    if count % 20 == 0:
+                                        enemy.shot()
+                                        enemy.ruck()
+                                        enemy.xmove(2)
                                 if count % 100 == 0:
                                     enemy.to_x = 0
 
