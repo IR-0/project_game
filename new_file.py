@@ -235,7 +235,6 @@ class Bullet(pygame.sprite.Sprite):
 class FeindBullet(Bullet):
     def __init__(self, x, y, typee, num, owner):
         super().__init__(x, y, typee, num, owner)
-        self.owner = owner
 
     def move(self):
         self.y += int(10 * self.owner.bullet_speed)
